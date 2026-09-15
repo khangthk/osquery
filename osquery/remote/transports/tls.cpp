@@ -60,6 +60,12 @@ CLI_FLAG(uint32,
          3600,
          "TLS session keep alive timeout in seconds");
 
+/// Enable gzip compression for HTTP response bodies.
+CLI_FLAG(bool,
+         tls_accept_gzip,
+         false,
+         "Enable gzip compression for HTTP responses");
+
 #ifndef NDEBUG
 HIDDEN_FLAG(bool,
             tls_allow_unsafe,
@@ -92,6 +98,12 @@ void TLSTransport::decorateRequest(http::Request& r) {
   r << http::Request::Header("Content-Type", serializer_->getContentType());
   r << http::Request::Header("Accept", serializer_->getContentType());
   r << http::Request::Header("User-Agent", kTLSUserAgentBase + kVersion);
+
+  auto node_key = getOption("node_key");
+  if (!node_key.empty()) {
+    r << http::Request::Header(kAuthorizationHeader,
+                               kNodeKeyAuthScheme + " " + node_key);
+  }
 }
 
 http::Client::Options TLSTransport::getOptions() {
@@ -150,6 +162,7 @@ http::Client::Options TLSTransport::getInternalOptions() {
   auto options = getOptions();
 
   options.keep_alive(FLAGS_tls_session_reuse);
+  options.accept_gzip(FLAGS_tls_accept_gzip);
 
   if (FLAGS_proxy_hostname.size() > 0) {
     options.proxy_hostname(FLAGS_proxy_hostname);

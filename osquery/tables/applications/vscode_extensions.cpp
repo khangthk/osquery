@@ -23,8 +23,32 @@ namespace fs = boost::filesystem;
 namespace osquery {
 namespace tables {
 
+// Constants for VSCode configuration paths
+const std::vector<std::pair<std::string, std::string>> KPathList = {
+    {".vscode-server", "vscode"},
+    {".vscode", "vscode"},
+    {".vscode-server-insiders", "vscode_insiders"},
+    {".vscode-insiders", "vscode_insiders"},
+    // Note vscodium regular does not follow the pattern
+    {".vscode-oss", "vscodium"},
+    {".vscodium-server", "vscodium"},
+    {".vscodium-insiders", "vscodium_insiders"},
+    {".vscodium-server-insiders", "vscodium_insiders"},
+    {".cursor", "cursor"},
+    {".cursor-server", "cursor"},
+    {".windsurf", "windsurf"},
+    {".windsurf-server", "windsurf"},
+    // Windsurf was rebranded to Devin Desktop in June 2026. New installs
+    // write extensions under .devin instead of .windsurf; the legacy path
+    // above is still read for machines that haven't been touched since.
+    {".devin", "windsurf"},
+    {".trae", "trae"},
+    {".trae-server", "trae"},
+};
+
 void genReadJSONAndAddExtensionRows(const std::string& uid,
                                     const std::string& path,
+                                    const std::string& vscode_edition,
                                     QueryData& results) {
   if (!pathExists(path).ok()) {
     return;
@@ -59,15 +83,11 @@ void genReadJSONAndAddExtensionRows(const std::string& uid,
 
     Row r;
     r["uid"] = uid;
+    r["vscode_edition"] = vscode_edition;
 
     rapidjson::Value::ConstMemberIterator it = identifier.FindMember("id");
     if (it != identifier.MemberEnd() && it->value.IsString()) {
       r["name"] = it->value.GetString();
-    }
-
-    it = identifier.FindMember("uuid");
-    if (it != identifier.MemberEnd() && it->value.IsString()) {
-      r["uuid"] = it->value.GetString();
     }
 
     it = extension.FindMember("version");
@@ -78,6 +98,14 @@ void genReadJSONAndAddExtensionRows(const std::string& uid,
     it = location.FindMember("path");
     if (it != location.MemberEnd() && it->value.IsString()) {
       r["path"] = it->value.GetString();
+    }
+
+    // Note that we used to look for identifier.uuid but it is not always
+    // present and in every example checked, metadata.id is present and has the
+    // same value (on Windows, macOS, and Linux and multiple VSCode forks)
+    it = metadata.FindMember("id");
+    if (it != metadata.MemberEnd() && it->value.IsString()) {
+      r["uuid"] = it->value.GetString();
     }
 
     it = metadata.FindMember("publisherDisplayName");
@@ -104,11 +132,22 @@ void genReadJSONAndAddExtensionRows(const std::string& uid,
   }
 }
 
+struct ConfDir {
+  std::string uid;
+  fs::path path;
+  std::string vscode_edition;
+
+  bool operator<(const ConfDir& other) const {
+    return std::tie(uid, path, vscode_edition) <
+           std::tie(other.uid, other.path, other.vscode_edition);
+  }
+};
+
 QueryData genVSCodeExtensions(QueryContext& context) {
   QueryData results;
 
   // find vscode config directories
-  std::set<std::pair<std::string, fs::path>> confDirs;
+  std::set<ConfDir> conf_dirs;
   auto users = usersFromContext(context);
   for (const auto& row : users) {
     auto uid = row.find("uid");
@@ -116,14 +155,19 @@ QueryData genVSCodeExtensions(QueryContext& context) {
     if (directory == row.end() || uid == row.end()) {
       continue;
     }
-    confDirs.insert(
-        {uid->second, fs::path(directory->second) / ".vscode-server"});
-    confDirs.insert({uid->second, fs::path(directory->second) / ".vscode"});
+
+    // Add paths for each of the supported VSCode editions
+    for (const auto& path_info : KPathList) {
+      conf_dirs.insert(ConfDir{uid->second,
+                               fs::path(directory->second) / path_info.first,
+                               path_info.second});
+    }
   }
 
-  for (const auto& confDir : confDirs) {
-    auto path = confDir.second / "extensions" / "extensions.json";
-    genReadJSONAndAddExtensionRows(confDir.first, path.string(), results);
+  for (const auto& conf_dir : conf_dirs) {
+    auto path = conf_dir.path / "extensions" / "extensions.json";
+    genReadJSONAndAddExtensionRows(
+        conf_dir.uid, path.string(), conf_dir.vscode_edition, results);
   }
 
   return results;

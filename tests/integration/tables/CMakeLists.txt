@@ -36,6 +36,7 @@ function(generateTestsIntegrationTablesTestsTest)
     carves.cpp
     certificates.cpp
     chrome_extensions.cpp
+    chrome_search_engines.cpp
     curl.cpp
     curl_certificate.cpp
     etc_hosts.cpp
@@ -47,6 +48,7 @@ function(generateTestsIntegrationTablesTestsTest)
     hash.cpp
     interface_addresses.cpp
     interface_details.cpp
+    jetbrains_plugins.cpp
     listening_ports.cpp
     logged_in_users.cpp
     npm_packages.cpp
@@ -76,6 +78,8 @@ function(generateTestsIntegrationTablesTestsTest)
     device_partitions.cpp
     ycloud_instance_metadata.cpp
     vscode_extensions.cpp
+    yara.cpp
+    yara_events.cpp
   )
 
   if(NOT PLATFORM_LINUX OR OSQUERY_BUILD_ROOT_TESTS)
@@ -169,6 +173,7 @@ function(generateTestsIntegrationTablesTestsTest)
       memory_info.cpp
       memory_map.cpp
       msr.cpp
+      pacman_packages.cpp
       portage_keywords.cpp
       portage_packages.cpp
       portage_use.cpp
@@ -176,7 +181,9 @@ function(generateTestsIntegrationTablesTestsTest)
       process_namespaces.cpp
       process_open_pipes.cpp
       rpm_package_files.cpp
+      deb_package_files.cpp
       rpm_packages.cpp
+      secureboot_certificates.cpp
       selinux_events.cpp
       shadow.cpp
       shared_memory.cpp
@@ -184,8 +191,6 @@ function(generateTestsIntegrationTablesTestsTest)
       startup_items.cpp
       syslog_events.cpp
       systemd_units.cpp
-      yara_events.cpp
-      yara.cpp
       yum_sources.cpp
     )
 
@@ -218,6 +223,7 @@ function(generateTestsIntegrationTablesTestsTest)
       authorizations.cpp
       battery.cpp
       browser_plugins.cpp
+      certificate_trust_settings.cpp
       connected_displays.cpp
       crashes.cpp
       cups_destinations.cpp
@@ -230,6 +236,7 @@ function(generateTestsIntegrationTablesTestsTest)
       gatekeeper.cpp
       gatekeeper_approved_apps.cpp
       homebrew_packages.cpp
+      macports_packages.cpp
       ibridge.cpp
       iokit_devicetree.cpp
       iokit_registry.cpp
@@ -244,10 +251,12 @@ function(generateTestsIntegrationTablesTestsTest)
       managed_policies.cpp
       mdfind.cpp
       nfs_shares.cpp
+      system_profiler.cpp
       nvram.cpp
       package_bom.cpp
       package_install_history.cpp
       package_receipts.cpp
+      password_policy.cpp
       plist.cpp
       power_sensors.cpp
       preferences.cpp
@@ -275,8 +284,6 @@ function(generateTestsIntegrationTablesTestsTest)
       xprotect_entries.cpp
       xprotect_meta.cpp
       xprotect_reports.cpp
-      yara_events.cpp
-      yara.cpp
     )
 
     list(APPEND source_files ${platform_source_files})
@@ -335,14 +342,15 @@ function(generateTestsIntegrationTablesTestsTest)
       wmi_filter_consumer_binding.cpp
       wmi_script_event_consumers.cpp
       deviceguard_status.cpp
-      yara.cpp
       tpm_info.cpp
       security_profile_info.cpp
+      recent_files.cpp
     )
 
     if(OSQUERY_BUILD_ETW)
       list(APPEND platform_source_files
-        etw_process_events.cpp
+      etw_process_events.cpp
+      dns_lookup_events.cpp
       )
     endif()
 

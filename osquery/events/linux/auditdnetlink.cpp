@@ -379,9 +379,6 @@ bool AuditdNetlinkReader::configureAuditService() noexcept {
   audit_set_backlog_limit(audit_netlink_handle_, FLAGS_audit_backlog_limit);
   audit_set_failure(audit_netlink_handle_, AUDIT_FAIL_SILENT);
 
-  // Request only the highest priority of audit status messages.
-  set_aumessage_mode(MSG_QUIET, DBG_NO);
-
   //
   // Audit rules
   //
@@ -434,8 +431,10 @@ bool AuditdNetlinkReader::configureAuditService() noexcept {
   audit_rule_data rule = {};
 
   // Attempt to add each one of the rules we collected
+  int machine = audit_detect_machine();
   for (int syscall_number : monitored_syscall_list_) {
-    audit_rule_syscall_data(&rule, syscall_number);
+    const char* syscall_name = audit_syscall_to_name(syscall_number, machine);
+    audit_rule_syscallbyname_data(&rule, syscall_name);
     if (FLAGS_audit_debug) {
       VLOG(1) << "Audit rule queued for syscall " << syscall_number;
     }

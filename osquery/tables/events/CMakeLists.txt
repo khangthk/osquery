@@ -33,12 +33,6 @@ function(generateOsqueryTablesEventsEventstable)
       linux/apparmor_events.cpp
     )
 
-    if(OSQUERY_BUILD_BPF)
-      list(APPEND source_files
-        linux/bpf_process_events.cpp
-        linux/bpf_socket_events.cpp
-      )
-    endif()
 
   elseif(DEFINED PLATFORM_MACOS)
     list(APPEND source_files
@@ -61,7 +55,8 @@ function(generateOsqueryTablesEventsEventstable)
 	
     if(OSQUERY_BUILD_ETW)
       list(APPEND source_files
-        windows/etw_process_events.cpp
+      windows/etw_process_events.cpp
+      windows/dns_lookup_events.cpp
       )
     endif()	
   endif()
@@ -103,8 +98,6 @@ function(generateOsqueryTablesEventsEventstable)
     set(platform_public_header_files
       linux/process_events.h
       linux/process_file_events.h
-      linux/bpf_process_events.h
-      linux/bpf_socket_events.h
       linux/selinux_events.h
       linux/seccomp_events.h
       linux/apparmor_events.h
@@ -127,7 +120,8 @@ function(generateOsqueryTablesEventsEventstable)
 	
     if(OSQUERY_BUILD_ETW)
       list(APPEND platform_public_header_files
-        windows/etw_process_events.h
+      windows/etw_process_events.h
+      windows/dns_lookup_events.h
       )
     endif()
 

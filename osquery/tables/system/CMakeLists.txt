@@ -72,6 +72,7 @@ function(generateOsqueryTablesSystemSystemtable)
       linux/model_specific_register.cpp
       linux/mounts.cpp
       linux/os_version.cpp
+      linux/pacman_packages.cpp
       linux/pci_devices.cpp
       linux/portage.cpp
       linux/process_open_files.cpp
@@ -79,6 +80,7 @@ function(generateOsqueryTablesSystemSystemtable)
       linux/processes.cpp
       linux/rpm_packages.cpp
       linux/secureboot.cpp
+      linux/secureboot_certificates.cpp
       linux/shadow.cpp
       linux/shared_memory.cpp
       linux/smbios_tables.cpp
@@ -113,6 +115,7 @@ function(generateOsqueryTablesSystemSystemtable)
       darwin/battery.mm
       darwin/block_devices.cpp
       darwin/certificates.mm
+      darwin/certificate_trust_settings.cpp
       darwin/connected_displays.mm
       darwin/cpu_info.cpp
       darwin/cpu_time.cpp
@@ -122,9 +125,10 @@ function(generateOsqueryTablesSystemSystemtable)
       darwin/disk_encryption.mm
       darwin/event_taps.mm
       darwin/extended_attributes.cpp
-      darwin/firewall.cpp
+      darwin/firewall.mm
       darwin/gatekeeper.cpp
       darwin/homebrew_packages.cpp
+      darwin/macports_packages.cpp
       darwin/ibridge.cpp
       darwin/iokit_registry.cpp
       darwin/kernel_extensions.cpp
@@ -138,12 +142,13 @@ function(generateOsqueryTablesSystemSystemtable)
       darwin/managed_policies.cpp
       darwin/mdfind.mm
       darwin/mdls.mm
+      darwin/system_profiler.mm
       darwin/mounts.cpp
       darwin/nfs_shares.cpp
       darwin/nvram.cpp
       darwin/os_version.mm
       darwin/packages.mm
-      darwin/password_policy.cpp
+      darwin/password_policy.mm
       darwin/pci_devices.cpp
       darwin/preferences.cpp
       darwin/process_open_descriptors.cpp
@@ -159,7 +164,7 @@ function(generateOsqueryTablesSystemSystemtable)
       darwin/sip_config.cpp
       darwin/smbios_tables.cpp
       darwin/smc_keys.cpp
-      darwin/startup_items.cpp
+      darwin/startup_items.mm
       darwin/sysctl_utils.cpp
       darwin/system_extensions.mm
       darwin/system_info.cpp
@@ -223,9 +228,11 @@ function(generateOsqueryTablesSystemSystemtable)
       windows/windows_crashes.cpp
       windows/windows_eventlog.cpp
       windows/windows_optional_features.cpp
+      windows/recent_files.cpp
       windows/windows_search.cpp
       windows/windows_security_products.cpp
       windows/windows_security_center.cpp
+      windows/token_privileges.cpp
       windows/windows_update_history.cpp
       windows/wmi_bios_info.cpp
       windows/wmi_cli_event_consumers.cpp
@@ -235,6 +242,8 @@ function(generateOsqueryTablesSystemSystemtable)
       windows/deviceguard_status.cpp
       windows/tpm_info.cpp
       windows/prefetch.cpp
+      windows/token_privileges.cpp
+      windows/process_open_handles.cpp
     )
   endif()
 
@@ -350,15 +359,20 @@ function(generateOsqueryTablesSystemSystemtable)
       darwin/keychain.h
       darwin/packages.h
       darwin/smbios_utils.h
+      darwin/os_version.h
     )
 
   elseif(DEFINED PLATFORM_WINDOWS)
     list(APPEND platform_public_header_files
+      windows/processes.h
+      windows/programs.h
       windows/registry.h
       windows/certificates.h
+      windows/token_privileges.h
       windows/windows_eventlog.h
       windows/windows_update_history.h
       windows/security_profile_info_utils.h
+      windows/startup_items.h
     )
   endif()
 

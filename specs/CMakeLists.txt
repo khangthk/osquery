@@ -37,6 +37,7 @@ function(generateNativeTables)
     carves.table
     certificates.table
     chrome_extensions.table
+    chrome_search_engines.table
     chrome_extension_content_scripts.table
     curl.table
     curl_certificate.table
@@ -74,6 +75,9 @@ function(generateNativeTables)
     utility/osquery_registry.table
     utility/osquery_schedule.table
     utility/time.table
+    yara_file.table
+    yara_process.table
+    yara_events.table
     ycloud_instance_metadata.table
   )
 
@@ -96,6 +100,7 @@ function(generateNativeTables)
     "darwin/authorization_mechanisms.table:macos"
     "darwin/authorizations.table:macos"
     "darwin/browser_plugins.table:macos"
+    "darwin/certificate_trust_settings.table:macos"
     "darwin/connected_displays.table:macos"
     "darwin/crashes.table:macos"
     "darwin/cups_destinations.table:macos"
@@ -109,6 +114,7 @@ function(generateNativeTables)
     "darwin/gatekeeper.table:macos"
     "darwin/gatekeeper_approved_apps.table:macos"
     "darwin/homebrew_packages.table:macos"
+    "darwin/macports_packages.table:macos"
     "darwin/ibridge_info.table:macos"
     "darwin/iokit_devicetree.table:macos"
     "darwin/iokit_registry.table:macos"
@@ -142,6 +148,7 @@ function(generateNativeTables)
     "darwin/sip_config.table:macos"
     "darwin/smc_keys.table:macos"
     "darwin/system_extensions.table:macos"
+    "darwin/system_profiler.table:macos"
     "darwin/temperature_sensors.table:macos"
     "darwin/time_machine_backups.table:macos"
     "darwin/time_machine_destinations.table:macos"
@@ -154,6 +161,7 @@ function(generateNativeTables)
     "darwin/xprotect_entries.table:macos"
     "darwin/xprotect_meta.table:macos"
     "darwin/xprotect_reports.table:macos"
+    "jetbrains_plugins.table:linux,macos,windows"
     "linux/apparmor_events.table:linux"
     "linux/apparmor_profiles.table:linux"
     "linux/apt_sources.table:linux"
@@ -175,6 +183,7 @@ function(generateNativeTables)
     "linux/md_drives.table:linux"
     "linux/md_personalities.table:linux"
     "linux/msr.table:linux"
+    "linux/pacman_packages.table:linux"
     "linux/portage_keywords.table:linux"
     "linux/portage_packages.table:linux"
     "linux/portage_use.table:linux"
@@ -186,6 +195,7 @@ function(generateNativeTables)
     "linux/seccomp_events.table:linux"
     "linux/selinux_events.table:linux"
     "linux/selinux_settings.table:linux"
+    "linux/secureboot_certificates.table:linux"
     "linux/shadow.table:linux"
     "linux/shared_memory.table:linux"
     "linux/syslog_events.table:linux"
@@ -292,6 +302,7 @@ function(generateNativeTables)
     "windows/physical_disk_performance.table:windows"
     "windows/autoexec.table:windows"
     "windows/default_environment.table:windows"
+    "windows/recent_files.table:windows"
     "windows/windows_security_products.table:windows"
     "windows/windows_security_center.table:windows"
     "windows/windows_optional_features.table:windows"
@@ -306,20 +317,14 @@ function(generateNativeTables)
     "windows/tpm_info.table:windows"
     "windows/security_profile_info.table:windows"
     "windows/windows_search.table:windows"
-    "yara/yara_events.table:linux,macos"
-    "yara/yara.table:linux,macos,windows"
+    "windows/process_open_handles.table:windows"
   )
 
-  if(OSQUERY_BUILD_BPF)
-    list(APPEND platform_dependent_spec_files
-      "linux/bpf_process_events.table:linux"
-      "linux/bpf_socket_events.table:linux"
-    )
-  endif()
 
   if(OSQUERY_BUILD_ETW)
     list(APPEND platform_dependent_spec_files
-      "windows/process_etw_events.table:windows"
+    "windows/process_etw_events.table:windows"
+    "windows/dns_lookup_events.table:windows"
     )
   endif()
 
@@ -333,6 +338,7 @@ function(generateNativeTables)
   if(OSQUERY_BUILD_DPKG)
     list(APPEND platform_dependent_spec_files
       "linux/deb_packages.table:linux"
+      "linux/deb_package_files.table:linux"
     )
   endif()
 

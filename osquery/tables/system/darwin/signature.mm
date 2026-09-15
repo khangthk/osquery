@@ -39,12 +39,18 @@ std::set<std::string> kCheckedArches{
 
 // Get the flags to pass to SecStaticCodeCheckValidityWithErrors, depending on
 // the OS version.
-Status getVerifyFlags(SecCSFlags& flags, bool hashResources) {
+Status getVerifyFlags(SecCSFlags& flags,
+                      bool hashResources,
+                      bool hashExecutable) {
   flags = kSecCSStrictValidate | kSecCSCheckAllArchitectures |
           kSecCSCheckNestedCode;
 
   if (!hashResources) {
     flags |= kSecCSDoNotValidateResources;
+  }
+
+  if (!hashExecutable) {
+    flags |= kSecCSDoNotValidateExecutable;
   }
 
   return Status(0, "ok");
@@ -53,6 +59,7 @@ Status getVerifyFlags(SecCSFlags& flags, bool hashResources) {
 Status genSignatureForFileAndArch(const std::string& path,
                                   const std::string& arch,
                                   bool hashResources,
+                                  bool hashExecutable,
                                   QueryData& results) {
   OSStatus result;
   SecStaticCodeRef static_code = nullptr;
@@ -96,11 +103,12 @@ Status genSignatureForFileAndArch(const std::string& path,
   Row r;
   r["path"] = path;
   r["hash_resources"] = INTEGER(hashResources);
+  r["hash_executable"] = INTEGER(hashExecutable);
   r["arch"] = arch;
   r["identifier"] = "";
 
   SecCSFlags flags = 0;
-  getVerifyFlags(flags, hashResources);
+  getVerifyFlags(flags, hashResources, hashExecutable);
   result = SecStaticCodeCheckValidityWithErrors(
       static_code, flags, nullptr, nullptr);
   if (result == errSecSuccess) {
@@ -196,6 +204,32 @@ Status genSignatureForFileAndArch(const std::string& path,
     }
   }
 
+  // Get entitlements dictionary
+  r["entitlements"] = "";
+  CFDictionaryRef entitlements = nullptr;
+  if (CFDictionaryGetValueIfPresent(code_info,
+                                    kSecCodeInfoEntitlementsDict,
+                                    (const void**)&entitlements)) {
+    if (entitlements != nullptr) {
+      @autoreleasepool {
+        NSDictionary* nsDict = (__bridge NSDictionary*)entitlements;
+        NSError* error = nil;
+        NSData* jsonData = [NSJSONSerialization dataWithJSONObject:nsDict
+                                                           options:0
+                                                             error:&error];
+        if (error == nil) {
+          NSString* jsonString =
+              [[NSString alloc] initWithData:jsonData
+                                    encoding:NSUTF8StringEncoding];
+          r["entitlements"] = [jsonString UTF8String];
+        } else {
+          LOG(ERROR) << "Failed to serialize entitlements to JSON for " << path
+                     << ": " << [[error localizedDescription] UTF8String];
+        }
+      }
+    }
+  }
+
   results.push_back(r);
   CFRelease(static_code);
   CFRelease(code_info);
@@ -205,11 +239,13 @@ Status genSignatureForFileAndArch(const std::string& path,
 // Generate a signature for a single file.
 void genSignatureForFile(const std::string& path,
                          bool hashResources,
+                         bool hashExecutable,
                          QueryData& results) {
   for (const auto& arch : kCheckedArches) {
     // This returns a status but there is nothing we need to handle
     // here so we can safely ignore it
-    genSignatureForFileAndArch(path, arch, hashResources, results);
+    genSignatureForFileAndArch(
+        path, arch, hashResources, hashExecutable, results);
   }
 }
 
@@ -248,6 +284,20 @@ QueryData genSignature(QueryContext& context) {
     hashResources = (value != "0");
   }
 
+  auto hashExecContraints =
+      context.constraints["hash_executable"].getAll(EQUALS);
+  if (hashExecContraints.size() > 1) {
+    VLOG(1)
+        << "Received multiple constraint values for column hash_executable. "
+           "Only the first one will be evaluated.";
+  }
+
+  bool hashExecutable = true;
+  if (!hashExecContraints.empty()) {
+    const auto& value = *hashExecContraints.begin();
+    hashExecutable = (value != "0");
+  }
+
   @autoreleasepool {
     for (const auto& path_string : paths) {
       // Note: we are explicitly *not* using is_regular_file here, since you can
@@ -256,7 +306,7 @@ QueryData genSignature(QueryContext& context) {
       if (!pathExists(path_string).ok()) {
         continue;
       }
-      genSignatureForFile(path_string, hashResources, results);
+      genSignatureForFile(path_string, hashResources, hashExecutable, results);
     }
   }
 

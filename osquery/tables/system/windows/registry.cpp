@@ -51,7 +51,14 @@ using reg_handle_t = std::unique_ptr<HKEY__, decltype(closeRegHandle)>;
 const std::set<int> kRegistryStringTypes = {
     REG_SZ, REG_MULTI_SZ, REG_EXPAND_SZ};
 
-const std::map<std::string, HKEY> kRegistryHives = {
+/// Compare hive names the way Windows resolves them, case-insensitively.
+struct CaseInsensitiveLess {
+  bool operator()(const std::string& lhs, const std::string& rhs) const {
+    return boost::ilexicographical_compare(lhs, rhs);
+  }
+};
+
+const std::map<std::string, HKEY, CaseInsensitiveLess> kRegistryHives = {
     {"HKEY_CLASSES_ROOT", HKEY_CLASSES_ROOT},
     {"HKEY_CURRENT_CONFIG", HKEY_CURRENT_CONFIG},
     {"HKEY_CURRENT_USER", HKEY_CURRENT_USER},
@@ -172,7 +179,7 @@ Status getClassExecutables(const std::string& clsId,
 }
 
 Status getUsernameFromKey(const std::string& key, std::string& rUsername) {
-  if (!boost::starts_with(key, "HKEY_USERS")) {
+  if (!boost::istarts_with(key, "HKEY_USERS")) {
     return Status(1, "Can not extract username from non-HKEY_USERS key");
   }
 
@@ -242,7 +249,6 @@ Status queryKey(const std::string& keyPath, QueryData& results) {
   DWORD cSubKeys;
   DWORD cValues;
   DWORD cchMaxValueName;
-  DWORD cbMaxValueData;
   DWORD retCode;
   FILETIME ftLastWriteTime;
   retCode = RegQueryInfoKeyW(hRegistryHandle.get(),
@@ -254,7 +260,7 @@ Status queryKey(const std::string& keyPath, QueryData& results) {
                              nullptr,
                              &cValues,
                              &cchMaxValueName,
-                             &cbMaxValueData,
+                             nullptr,
                              nullptr,
                              &ftLastWriteTime);
   if (retCode != ERROR_SUCCESS) {
@@ -296,7 +302,6 @@ Status queryKey(const std::string& keyPath, QueryData& results) {
 
   DWORD cchValue = maxKeyLength;
   auto achValue = std::make_unique<WCHAR[]>(maxValueName);
-  auto bpDataBuff = std::make_unique<BYTE[]>(cbMaxValueData);
 
   // Process registry values
   for (size_t i = 0; i < cValues; i++) {
@@ -315,24 +320,36 @@ Status queryKey(const std::string& keyPath, QueryData& results) {
       return Status(retCode, "Failed to enumerate registry values");
     }
 
-    DWORD lpData = cbMaxValueData;
+    DWORD lpData = 0;
     DWORD lpType;
 
-    retCode = RegQueryValueExW(hRegistryHandle.get(),
-                               achValue.get(),
-                               nullptr,
-                               &lpType,
-                               bpDataBuff.get(),
-                               &lpData);
-    if (retCode != ERROR_SUCCESS) {
-      return Status(retCode, "Failed to query registry value");
+    // Get the required size
+    retCode = RegGetValueW(hRegistryHandle.get(),
+                           nullptr,
+                           achValue.get(),
+                           RRF_RT_ANY,
+                           &lpType,
+                           nullptr,
+                           &lpData);
+
+    if ((retCode != ERROR_SUCCESS) || (lpData == 0)) {
+      return Status(retCode, "Failed to query registry value size");
     }
 
-    // It's possible for registry entries to have been inserted incorrectly
-    // resulting in non-null-terminated strings
-    if (bpDataBuff != nullptr && lpData != 0 &&
-        kRegistryStringTypes.find(lpType) != kRegistryStringTypes.end()) {
-      bpDataBuff[lpData - 1] = 0x00;
+    std::unique_ptr<BYTE[]> bpDataBuff = std::make_unique<BYTE[]>(lpData);
+
+    // Read the registry value data ensuring correct handling of non-terminated
+    // strings
+    retCode = RegGetValueW(hRegistryHandle.get(),
+                           nullptr,
+                           achValue.get(),
+                           RRF_RT_ANY,
+                           &lpType,
+                           bpDataBuff.get(),
+                           &lpData);
+
+    if (retCode != ERROR_SUCCESS) {
+      return Status(retCode, "Failed to query registry value");
     }
 
     Row r;
@@ -365,7 +382,7 @@ Status queryKey(const std::string& keyPath, QueryData& results) {
       case REG_FULL_RESOURCE_DESCRIPTOR:
       case REG_RESOURCE_LIST:
       case REG_BINARY:
-        for (size_t j = 0; j < cbMaxValueData; j++) {
+        for (size_t j = 0; j < lpData; j++) {
           regBinary.push_back((char)bpDataBuff[j]);
         }
         boost::algorithm::hex(
@@ -406,7 +423,6 @@ Status queryKey(const std::string& keyPath, QueryData& results) {
       default:
         break;
       }
-      ZeroMemory(bpDataBuff.get(), cbMaxValueData);
     }
     results.push_back(r);
   }
@@ -526,8 +542,8 @@ static inline void maybeWarnLocalUsers(const std::set<std::string>& rKeys) {
   std::string hive, _;
   for (const auto& key : rKeys) {
     explodeRegistryPath(key, hive, _);
-    if (hive == "HKEY_CURRENT_USER" ||
-        hive == "HKEY_CURRENT_USER_LOCAL_SETTINGS") {
+    if (boost::iequals(hive, "HKEY_CURRENT_USER") ||
+        boost::iequals(hive, "HKEY_CURRENT_USER_LOCAL_SETTINGS")) {
       LOG(WARNING) << "CURRENT_USER hives are not queryable by osqueryd; "
                       "query HKEY_USERS with the desired users SID instead";
       break;

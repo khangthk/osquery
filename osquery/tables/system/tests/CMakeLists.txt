@@ -32,11 +32,13 @@ function(generateOsqueryTablesSystemLinuxTests)
     linux/apt_sources_tests.cpp
     linux/extended_attributes_tests.cpp
     linux/md_tables_tests.cpp
+    linux/pacman_packages_tests.cpp
     linux/pci_devices_tests.cpp
     linux/pcidb_tests.cpp
     linux/portage_tests.cpp
     linux/processes_tests.cpp
     linux/rpm_packages_tests.cpp
+    linux/secureboot_certificates_tests.cpp
     linux/selinux_settings_tests.cpp
     linux/yum_sources_tests.cpp
   )
@@ -55,6 +57,7 @@ function(generateOsqueryTablesSystemLinuxTests)
     osquery_utils_conversions
     tests_helper
     thirdparty_googletest
+    thirdparty_openssl
   )
 endfunction()
 
@@ -86,6 +89,7 @@ endfunction()
 
 function(generateOsqueryTablesSystemTestsSystemtablestestsTest)
   add_osquery_executable(osquery_tables_system_tests_systemtablestests-test
+    npm_packages_tests.cpp
     system_tables_tests.cpp
   )
 
@@ -113,11 +117,12 @@ function(generateOsqueryTablesSystemDarwinTests)
     darwin/extended_attributes_tests.cpp
     darwin/firewall_tests.cpp
     darwin/launchd_tests.cpp
+    darwin/macports_packages_tests.cpp
     darwin/mdfind_tests.cpp
     darwin/packages_tests.cpp
     darwin/processes_tests.cpp
     darwin/smc_tests.cpp
-    darwin/startup_items_tests.cpp
+    darwin/startup_items_tests.mm
     darwin/system_extensions_test.cpp
     darwin/signature_tests.mm
   )
@@ -189,10 +194,14 @@ endfunction()
 function(generateOsqueryTablesSystemWindowsTests)
   add_osquery_executable(osquery_tables_system_windows_tests-test
     windows/certificates_tests.cpp
+    windows/processes_tests.cpp
+    windows/programs_tests.cpp
     windows/registry_tests.cpp
+    windows/token_privileges_tests.cpp
     windows/windows_eventlog_tests.cpp
     windows/windows_optional_features_tests.cpp
     windows/windows_update_history_tests.cpp
+    windows/startup_items_tests.cpp
   )
 
   target_link_libraries(osquery_tables_system_windows_tests-test PRIVATE

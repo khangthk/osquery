@@ -2,7 +2,7 @@
   "openssl": {
     "product": "openssl",
     "vendor": "openssl",
-    "version": "3.2.1",
+    "version": "3.6.3",
     "ignored-cves": []
   },
   "augeas": {
@@ -94,21 +94,6 @@
       "CVE-2023-34969"
     ]
   },
-  "ebpfpub": {
-    "vendor": "trailofbits",
-    "commit": "8d56c802cb0d655a6794d96ae20df6f6a8fcf385"
-  },
-  "linuxevents": {
-    "vendor": "trailofbits",
-    "commit": "31db0a7acdaede9cd6a0311ff5e48ac64cd130cb"
-  },
-  "expat": {
-    "product": "libexpat",
-    "vendor": "libexpat_project",
-    "version": "2.6.0",
-    "commit": "849da3e3fe727fccef5e96ef35482d66447f06a2",
-    "ignored-cves": []
-  },
   "gflags": {
     "vendor": "google",
     "version": "2.2.2",
@@ -129,11 +114,9 @@
   "libarchive": {
     "product": "libarchive",
     "vendor": "libarchive",
-    "version": "3.6.2",
-    "commit": "ba80276ccc3c941c4918ec6e2460059f0c525c43",
-    "ignored-cves": [
-      "CVE-2023-30571"
-    ]
+    "version": "3.8.1",
+    "commit": "9525f90ca4bd14c7b335e2f8c84a4607b0af6bdf",
+    "ignored-cves": []
   },
   "libaudit": {
     "product": "audit-userspace",
@@ -297,24 +280,23 @@
       "CVE-2021-37600",
       "CVE-2022-0563",
       "CVE-2021-3996",
-      "CVE-2021-3995"
+      "CVE-2021-3995",
+      "CVE-2024-28085"
     ]
   },
   "yara": {
     "product": "yara",
     "vendor": "virustotal",
-    "version": "4.2.3",
-    "commit": "ba94b4f8ebb6d56786d14f6a0f7529b32d7c216f",
+    "version": "4.5.4",
+    "commit": "7ff39042be5c63682a037e13a75221d59393cf8b",
     "ignored-cves": []
   },
   "zlib": {
     "product": "zlib",
     "vendor": "zlib",
-    "version": "1.3",
-    "commit": "09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851",
-    "ignored-cves": [
-      "CVE-2023-45853"
-    ]
+    "version": "1.3.1",
+    "commit": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+    "ignored-cves": []
   },
   "zstd": {
     "product": "zstandard",
